@@ -1,47 +1,80 @@
-
 import cv2
 
-# Open the default camera
+
+def to_gry(frame):
+    return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+
+def to_hsv(frame):
+    return cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+
 camera = cv2.VideoCapture(0)
 
-print("Camera opened:", camera.isOpened())
+# check if camera opened properly
+if not camera.isOpened():
+    print("Camera could not be opened")
+    exit()
 
-# Get camera frame size
-frame_width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
-frame_height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-print("Frame size:", frame_width, "x", frame_height)
+# take first frame to get width and height
+success, frame = camera.read()
 
-# Define video codec
-fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+if not success:
+    print("Could not read frame")
+    exit()
 
-# Create video writer
-out = cv2.VideoWriter(
-    "output.mp4",
-    fourcc,
-    30.0,
-    (frame_width, frame_height)
-)
+
+# frame.shape gives height, width and number of colour channels
+height, width, channels = frame.shape
+
+# find centre of frame
+centre_x = width // 2
+centre_y = height // 2
+
 
 while True:
+
+    # read a new frame from camera
     success, frame = camera.read()
 
-    # Always check that the frame was captured successfully first
     if not success:
-        print("Could not read frame")
         break
 
-    # Save the frame to the output video
-    out.write(frame)
 
-    # Show the live camera feed
-    cv2.imshow("Camera", frame)
+    # convert clean frame before drawing anything on it
+    gray = to_gry(frame)
+    hsv = to_hsv(frame)
 
-    # Press q to exit
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+
+    # print the bgr values of pixel at x=120 and y=100
+    print(frame[100, 120])
+
+    # print the same pixel in grayscale
+    print(gray[100, 120])
+
+    # print the same pixel in hsv
+    print(hsv[100, 120])
+
+
+    # make a copy so drawing does not manipulate original frame
+    display_frame = frame.copy()
+
+    # draw circle at centre of frame
+    cv2.circle(display_frame, (centre_x, centre_y), 5, (0, 0, 254), -1)
+
+
+    # display original, grayscale and hsv images
+    cv2.imshow("live feed", display_frame)
+    cv2.imshow("gray", gray)
+    cv2.imshow("hsv", hsv)
+
+
+    # press q to stop program
+    if cv2.waitKey(1) == ord("q"):
         break
 
-# Cleanup happens AFTER the loop
+
+# release camera and close windows
 camera.release()
-out.release()
 cv2.destroyAllWindows()
